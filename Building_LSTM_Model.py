@@ -1,3 +1,19 @@
+'''
+Build a two-branch LSTM network for jumps & non-jumps classification.
+The network combines both skeleton data and specific features, achieving 90% accuracy
+
+The feature list:
+      - hip_up: hip height relative to baseline
+      - ankle_up: ankle height relative to baseline
+      - compact: how close arms/legs are to the body center
+      - straight: trunk verticality
+      - arms_up: hand height relative to shoulders
+      - arms_front: hand forward distance to shoulders
+      - abs_omega: absolute angular velocity (yaw rate)
+      - ankle_angle: knee-ankle-toe angle in degrees (bigger in jumps, ~<=90 on ice)
+'''
+
+
 import os
 import math
 import random
@@ -504,3 +520,248 @@ def eval_one_epoch(model, loader, criterion, device):
     avg_loss = total_loss / total if total > 0 else 0.0
     acc = correct / total if total > 0 else 0.0
     return avg_loss, acc
+
+
+# =========================
+# 5. Test / new data evaluation
+# =========================
+def collate_fn_with_path(batch, max_len=64):
+    """
+    Collate function similar to collate_fn, but also returns the file paths.
+
+    Returns:
+        pose_batch: (B, max_len, Dp)
+        feat_batch: (B, max_len, Df)
+        lengths:    (B,)
+        labels:     (B,)
+        paths:      list of str, length B
+    """
+    batch_size = len(batch)
+    Dp = batch[0]["pose_seq"].shape[1]
+    Df = batch[0]["feat_seq"].shape[1]
+
+    pose_batch = np.zeros((batch_size, max_len, Dp), dtype=np.float32)
+    feat_batch = np.zeros((batch_size, max_len, Df), dtype=np.float32)
+    lengths = []
+    labels = []
+    paths = []
+
+    for i, item in enumerate(batch):
+        pose_seq = item["pose_seq"]
+        feat_seq = item["feat_seq"]
+        T = item["length"]
+        L = min(T, max_len)
+
+        pose_batch[i, :L, :] = pose_seq[:L]
+        feat_batch[i, :L, :] = feat_seq[:L]
+        lengths.append(L)
+        labels.append(item["label"])
+        paths.append(item["path"])
+
+    pose_batch = torch.from_numpy(pose_batch)
+    feat_batch = torch.from_numpy(feat_batch)
+    lengths    = torch.tensor(lengths, dtype=torch.long)
+    labels     = torch.tensor(labels, dtype=torch.float32)
+
+    return pose_batch, feat_batch, lengths, labels, paths
+
+
+def evaluate_on_labeled_test_set(
+    model,
+    test_root,
+    device,
+    max_len=64,
+    batch_size=16,
+    threshold=0.5,
+    max_show_tp_tn=5,
+):
+    """
+    Evaluate model on a labeled test set and print:
+      - accuracy
+      - confusion matrix
+      - example clips for all four cases: TP, TN, FP, FN
+
+    test_root structure:
+        test_root/
+            jumps/*.npz       (label = 1)
+            non-jumps/*.npz   (label = 0)
+    """
+    model.eval()
+
+    # Use FSClipsDataset; with val_fraction=0.0 we get all samples in 'train' split.
+    test_dataset = FSClipsDataset(
+        root_dir=test_root,
+        split="train",
+        val_fraction=0.0,
+        random_seed=123,
+    )
+
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        collate_fn=lambda b: collate_fn_with_path(b, max_len=max_len),
+    )
+
+    all_labels = []
+    all_probs = []
+    all_paths = []
+
+    # Four buckets
+    tps = []  # true=1, pred=1
+    tns = []  # true=0, pred=0
+    fps = []  # true=0, pred=1
+    fns = []  # true=1, pred=0
+
+    with torch.no_grad():
+        for pose_batch, feat_batch, lengths, labels, paths in test_loader:
+            pose_batch = pose_batch.to(device)
+            feat_batch = feat_batch.to(device)
+            lengths    = lengths.to(device)
+            labels     = labels.to(device)
+
+            logits = model(pose_batch, feat_batch, lengths)  # (B,)
+            probs  = torch.sigmoid(logits)                   # (B,)
+
+            probs_np  = probs.cpu().numpy()
+            labels_np = labels.cpu().numpy()
+            preds_np  = (probs_np >= threshold).astype(np.float32)
+
+            for y_true, y_pred, p, path in zip(labels_np, preds_np, probs_np, paths):
+                all_labels.append(y_true)
+                all_probs.append(p)
+                all_paths.append(path)
+
+                if y_true == 1.0 and y_pred == 1.0:
+                    tps.append((path, y_true, p))
+                elif y_true == 0.0 and y_pred == 0.0:
+                    tns.append((path, y_true, p))
+                elif y_true == 0.0 and y_pred == 1.0:
+                    fps.append((path, y_true, p))
+                elif y_true == 1.0 and y_pred == 0.0:
+                    fns.append((path, y_true, p))
+
+    all_labels = np.array(all_labels)
+    all_probs  = np.array(all_probs)
+    preds_all  = (all_probs >= threshold).astype(np.float32)
+
+    # ----- accuracy -----
+    accuracy = (preds_all == all_labels).mean() if len(all_labels) > 0 else 0.0
+    print(f"\n[Test] Labeled test set size: {len(all_labels)}")
+    print(f"[Test] Accuracy: {accuracy:.3f}")
+
+    # ----- confusion matrix -----
+    tn = np.sum((all_labels == 0) & (preds_all == 0))
+    fp = np.sum((all_labels == 0) & (preds_all == 1))
+    fn = np.sum((all_labels == 1) & (preds_all == 0))
+    tp = np.sum((all_labels == 1) & (preds_all == 1))
+
+    print("\n[Confusion Matrix] (rows = true, cols = predicted)")
+    print("                pred_non-jump   pred_jump")
+    print(f"true_non-jump      {tn:5d}          {fp:5d}")
+    print(f"true_jump          {fn:5d}          {tp:5d}")
+
+    # extra stats
+    if (tp + fn) > 0:
+        recall = tp / (tp + fn)
+    else:
+        recall = 0.0
+    if (tp + fp) > 0:
+        precision = tp / (tp + fp)
+    else:
+        precision = 0.0
+
+    print(f"\n[Stats] Precision (jump class): {precision:.3f}")
+    print(f"[Stats] Recall    (jump class): {recall:.3f}")
+
+    # ----- examples: TP / TN / FP / FN -----
+
+    # True Positives (correct jump)
+    print(f"\n[Examples] True Positives (true=jump, pred=jump) (up to {max_show_tp_tn}):")
+    for i, (path, y_true, p) in enumerate(tps[:max_show_tp_tn], start=1):
+        print(f"  TP {i:02d}. {path}")
+        print(f"       prob_jump={p:.3f}")
+
+    # True Negatives (correct non-jump)
+    print(f"\n[Examples] True Negatives (true=non-jump, pred=non-jump) (up to {max_show_tp_tn}):")
+    for i, (path, y_true, p) in enumerate(tns[:max_show_tp_tn], start=1):
+        print(f"  TN {i:02d}. {path}")
+        print(f"       prob_jump={p:.3f}")
+
+    # False Positives: show ALL (these are most interesting)
+    print(f"\n[Examples] False Positives (true=non-jump, pred=jump) (show ALL, count={len(fps)}):")
+    for i, (path, y_true, p) in enumerate(fps, start=1):
+        print(f"  FP {i:02d}. {path}")
+        print(f"       prob_jump={p:.3f}")
+
+    # False Negatives: show ALL (also very important)
+    print(f"\n[Examples] False Negatives (true=jump, pred=non-jump) (show ALL, count={len(fns)}):")
+    for i, (path, y_true, p) in enumerate(fns, start=1):
+        print(f"  FN {i:02d}. {path}")
+        print(f"       prob_jump={p:.3f}")
+
+    return accuracy, (tn, fp, fn, tp), {"TP": tps, "TN": tns, "FP": fps, "FN": fns}
+
+
+def predict_on_unlabeled_folder(
+    model,
+    folder,
+    device,
+    max_len=64,
+    threshold=0.5,
+):
+    """
+    Run the trained model on a folder of unlabeled npz clips and
+    print predicted labels (jump / non-jump) with probabilities.
+
+    Folder structure:
+        folder/
+            *.npz   (each contains keypoints, times)
+    """
+    model.eval()
+    folder = os.path.abspath(folder)
+    print(f"[Predict] Scanning folder: {folder}")
+
+    npz_files = [
+        f for f in os.listdir(folder)
+        if f.lower().endswith(".npz")
+    ]
+    npz_files.sort()
+
+    if not npz_files:
+        print("[Predict] No npz files found.")
+        return
+
+    for fname in npz_files:
+        path = os.path.join(folder, fname)
+        data = np.load(path, allow_pickle=True)
+        kp    = data["keypoints"].astype(np.float32)  # (T, 33, 4)
+        times = data["times"].astype(np.float32)      # (T,)
+
+        # Compute pose & features the same way as in dataset
+        pose_seq = normalize_pose_xy(kp)               # (T, Dp)
+        feat_seq, _ = compute_clip_features(kp, times) # (T, Df)
+        T = pose_seq.shape[0]
+        L = min(T, max_len)
+
+        # Prepare padded tensors of shape (1, max_len, D)
+        Dp = pose_seq.shape[1]
+        Df = feat_seq.shape[1]
+
+        pose_batch = np.zeros((1, max_len, Dp), dtype=np.float32)
+        feat_batch = np.zeros((1, max_len, Df), dtype=np.float32)
+        pose_batch[0, :L, :] = pose_seq[:L]
+        feat_batch[0, :L, :] = feat_seq[:L]
+
+        lengths = torch.tensor([L], dtype=torch.long)
+
+        pose_batch = torch.from_numpy(pose_batch).to(device)
+        feat_batch = torch.from_numpy(feat_batch).to(device)
+        lengths    = lengths.to(device)
+
+        with torch.no_grad():
+            logit = model(pose_batch, feat_batch, lengths)  # (1,)
+            prob  = torch.sigmoid(logit).item()
+
+        label = "jump" if prob >= threshold else "non-jump"
+        print(f"[Predict] {fname}: label={label}, prob_jump={prob:.3f}")
