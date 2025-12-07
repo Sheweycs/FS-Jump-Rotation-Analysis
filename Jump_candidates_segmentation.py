@@ -1,3 +1,16 @@
+'''
+Recommend running locally
+
+Using Physics-Based Heuristics (Body Tightness and Angular Velocity) for Jump Candidate segmentations
+The following parameters can be adjusted as needed: 
+compact_top_ratio=0.2, 
+rot_top_ratio=0.1, 
+max_clip_sec=5.0, 
+min_gap_sec=0.2,
+extend_sec=1.0,
+min_segment_sec=0.5
+'''
+
 import os
 import cv2
 import numpy as np
@@ -798,4 +811,5 @@ if __name__ == "__main__":
         extend_sec=1.0,
         min_segment_sec=0.5,
         
+
     )
