@@ -153,4 +153,4 @@ This project is part of an academic course project (MIE1517).
 
 ---
 
-For detailed implementation and experimental results, please refer to `FS_TCN.ipynb`.
+For detailed implementation and experimental results, please refer to `MAIN_FS_Rotation_Analysis.ipynb`.
