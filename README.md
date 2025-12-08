@@ -18,15 +18,29 @@ This project aims to build a deep learning-based system that can automatically d
 
 ```
 FS-Jump-Rotation-Analysis/
-├── MAIN_FS_Rotation_Analysis.ipynb # Main notebook with the whole workflow
-├── Jump_candidates_segmentation.py # Physics-based jump candidate segmentation
-├── Building_LSTM_Model.py      # LSTM-based model implementation for jumps and non-jumps classification
-├── FS_LSTM_JUMP.ipynb          # LSTM Model training record
-├── tcn_model.py                # TCN model architecture (TCNBlock, TinyTCN)
-├── training.py                 # Training and evaluation functions
-├── hyperparameter_tuning.py    # Hyperparameter optimization using Optuna
-├── environment.yml             # Conda environment configuration
-└── README.md                   # This file
+├── MAIN_FS_Rotation_Analysis.ipynb   # Main notebook with the whole workflow
+├── FS_LSTM_JUMP.ipynb                # LSTM model training record
+│
+├── # Core Model
+├── tcn_model.py                      # TCN model architecture (TCNBlock, TinyTCN)
+├── Building_LSTM_Model.py            # LSTM-based model for jumps/non-jumps classification
+├── training.py                       # Training and evaluation functions
+├── hyperparameter_tuning.py          # Hyperparameter optimization using Optuna
+│
+├── # Data Processing
+├── coords_extraction.py              # Extract skeleton coordinates from videos using MediaPipe
+├── skeleton_video_extraction.py      # Generate skeleton overlay videos from original videos
+├── Jump_candidates_segmentation.py   # Physics-based jump candidate segmentation
+├── data_augmentation.py              # Video augmentation (flip, rotate) for dataset balancing
+│
+├── # Visualization
+├── result_visualization.py           # Overlay prediction results on skeleton videos
+├── Result_Compare_Visualization.py   # Analyze predictions and visualize decision space (t-SNE)
+│
+├── # Config & Docs
+├── environment.yml                   # Conda environment configuration
+├── system workflow.png               # System architecture diagram
+└── README.md                         # This file
 ```
 
 ## ✨ Features
@@ -139,4 +153,4 @@ This project is part of an academic course project (MIE1517).
 
 ---
 
-For detailed implementation and experimental results, please refer to `FS_TCN.ipynb`.
+For detailed implementation and experimental results, please refer to `MAIN_FS_Rotation_Analysis.ipynb`.
