@@ -53,7 +53,7 @@ FS-Jump-Rotation-Analysis/
 ### 2. **Jump Segmentation**
 - Physics-based heuristics for jump candidate detection
 - Body tightness and angular velocity analysis
-- Automatic clip extraction from full routines
+- Automatic clip extraction from full routines using LSTM model
 
 ### 3. **Temporal Convolutional Network (TCN)**
 - **TCNBlock**: Residual blocks with dilated convolutions for temporal pattern recognition
