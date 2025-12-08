@@ -50,28 +50,29 @@ FS-Jump-Rotation-Analysis/
 - Processes videos at ~15 FPS for efficient pose detection
 - Normalizes and preprocesses skeleton data
 
-### 2. **Temporal Convolutional Network (TCN)**
+### 2. **Jump Segmentation**
+- Physics-based heuristics for jump candidate detection
+- Body tightness and angular velocity analysis
+- Automatic clip extraction from full routines
+
+### 3. **Temporal Convolutional Network (TCN)**
 - **TCNBlock**: Residual blocks with dilated convolutions for temporal pattern recognition
 - **TinyTCN**: Lightweight architecture with:
   - Three TCN blocks with increasing dilation rates (1, 2, 4)
   - Global Average Pooling and Global Max Pooling
   - Classification head for rotation sufficiency detection
 
-### 3. **Training Pipeline**
+### 4. **Training Pipeline**
 - Modular training and evaluation functions
 - Support for class-weighted loss functions
 - Gradient clipping for stable training
 - Comprehensive metrics: accuracy, F1-score, recall, ROC-AUC
 
-### 4. **Hyperparameter Optimization**
+### 5. **Hyperparameter Optimization**
 - Bayesian optimization using Optuna
 - Supports both F1-score and recall-based optimization
 - Efficient search space exploration
 
-### 5. **Jump Segmentation**
-- Physics-based heuristics for jump candidate detection
-- Body tightness and angular velocity analysis
-- Automatic clip extraction from full routines
 
 ## 🔧 Installation
 
