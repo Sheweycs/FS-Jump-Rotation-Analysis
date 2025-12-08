@@ -18,12 +18,13 @@ This project aims to build a deep learning-based system that can automatically d
 
 ```
 FS-Jump-Rotation-Analysis/
-├── FS_TCN_S.ipynb              # Main notebook with TCN model training and evaluation
+├── MAIN_FS_Rotation_Analysis.ipynb # Main notebook with the whole workflow
+├── Jump_candidates_segmentation.py # Physics-based jump candidate segmentation
+├── Building_LSTM_Model.py      # LSTM-based model implementation for jumps and non-jumps classification
+├── FS_LSTM_JUMP.ipynb          # LSTM Model training record
 ├── tcn_model.py                # TCN model architecture (TCNBlock, TinyTCN)
 ├── training.py                 # Training and evaluation functions
 ├── hyperparameter_tuning.py    # Hyperparameter optimization using Optuna
-├── Jump_candidates_segmentation.py  # Physics-based jump candidate segmentation
-├── Building_LSTM_Model.py      # Alternative LSTM-based model implementation
 ├── environment.yml             # Conda environment configuration
 └── README.md                   # This file
 ```
