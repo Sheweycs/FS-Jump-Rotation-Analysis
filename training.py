@@ -17,6 +17,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 from sklearn.metrics import f1_score, recall_score
+import matplotlib.pyplot as plt
 
 
 def train_one_epoch(model, loader, optimizer, criterion, device=None):
@@ -99,3 +100,32 @@ def evaluate(model, loader, device=None):
 
     return avg_loss, acc, f1m, preds, gts, recall_m
 
+
+def plot_training_curves(history):
+    """
+    history: dict with keys:
+        train_loss, val_loss, train_acc, val_acc
+    """
+    epochs = range(1, len(history["train_loss"]) + 1)
+
+    # ---- Loss Curve ----
+    plt.figure()
+    plt.plot(epochs, history["train_loss"], label="Train Loss")
+    plt.plot(epochs, history["val_loss"], label="Val Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Training & Validation Loss")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+    # ---- Accuracy Curve ----
+    plt.figure()
+    plt.plot(epochs, history["train_acc"], label="Train Acc")
+    plt.plot(epochs, history["val_acc"], label="Val Acc")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title("Training & Validation Accuracy")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
