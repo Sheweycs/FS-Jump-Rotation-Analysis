@@ -9,8 +9,13 @@ Usage Example:
     # Training
     loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
     
-    # Evaluation
-    avg_loss, acc, f1_m, preds, gts, recall_m = evaluate(model, valid_loader, device)
+    # Evaluation (validation only)
+    va_loss, va_acc, f1_m, preds, gts, recall_m, _, _ = evaluate(model, valid_loader, device)
+    
+    # Evaluation with training metrics
+    va_loss, va_acc, f1_m, preds, gts, recall_m, tr_loss, tr_acc = evaluate(
+        model, valid_loader, device, train_loader=train_loader
+    )
 """
 
 import torch
@@ -57,24 +62,28 @@ def train_one_epoch(model, loader, optimizer, criterion, device=None):
 
 
 @torch.no_grad()
-def evaluate(model, loader, device=None):
+def evaluate(model, loader, device=None, train_loader=None):
     """
     Evaluate the model on a dataset.
     
     Args:
         model: The model to evaluate
-        loader: DataLoader for evaluation data
+        loader: DataLoader for evaluation data (validation/test)
         device: Device to run evaluation on (e.g., 'cuda' or 'cpu'). 
                 If None, will be inferred from model parameters.
+        train_loader: Optional DataLoader for training data. If provided,
+                      training loss and accuracy will also be computed.
     
     Returns:
-        tuple: (avg_loss, acc, f1_m, preds, gts, recall_m)
-            - avg_loss: Average loss
-            - acc: Accuracy
+        tuple: (avg_loss, acc, f1_m, preds, gts, recall_m, train_loss, train_acc)
+            - avg_loss: Average loss on evaluation data
+            - acc: Accuracy on evaluation data
             - f1_m: Macro-averaged F1 score
             - preds: List of predictions
             - gts: List of ground truth labels
             - recall_m: Macro-averaged recall
+            - train_loss: Training loss (None if train_loader not provided)
+            - train_acc: Training accuracy (None if train_loader not provided)
     """
     if device is None:
         # Infer device from model parameters
@@ -98,7 +107,24 @@ def evaluate(model, loader, device=None):
     f1m = f1_score(gts, preds, average="macro")
     recall_m = recall_score(gts, preds, average="macro")   # macro recall
 
-    return avg_loss, acc, f1m, preds, gts, recall_m
+    # Compute training metrics if train_loader is provided
+    train_loss, train_acc = None, None
+    if train_loader is not None:
+        tr_preds, tr_gts, tr_loss_sum, tr_n = [], [], 0.0, 0
+        for x, y in train_loader:
+            x, y = x.to(device), y.to(device)
+            logits = model(x)
+            loss = F.cross_entropy(logits, y, reduction="sum")
+            tr_loss_sum += loss.item()
+            tr_n += x.size(0)
+            pred = logits.softmax(-1).argmax(-1).cpu().numpy().tolist()
+            tr_preds += pred
+            tr_gts += y.cpu().numpy().tolist()
+        
+        train_loss = tr_loss_sum / max(1, tr_n)
+        train_acc = (np.array(tr_preds) == np.array(tr_gts)).mean()
+
+    return avg_loss, acc, f1m, preds, gts, recall_m, train_loss, train_acc
 
 
 def plot_training_curves(history):

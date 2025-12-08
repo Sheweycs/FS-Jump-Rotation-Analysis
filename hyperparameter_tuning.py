@@ -243,7 +243,7 @@ def create_objective_recall(model_class, c_in, num_classes, device, train_loader
     return objective
 
 
-def run_hyperparameter_tuning(objective = "f1", n_trials=100, direction="maximize", study_name=None):
+def run_hyperparameter_tuning(objective, n_trials=100, direction="maximize", study_name=None):
     """
     Run hyperparameter tuning using Optuna.
     
@@ -256,7 +256,6 @@ def run_hyperparameter_tuning(objective = "f1", n_trials=100, direction="maximiz
     Returns:
         study: Optuna study object with results
     """
-    objective_function = "create_objective_" + objective
     study = optuna.create_study(direction=direction, study_name=study_name)
     study.optimize(objective, n_trials=n_trials)
     
