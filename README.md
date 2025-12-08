@@ -10,9 +10,10 @@ In figure skating competitions, judging accuracy and fairness are essential but 
 
 This project aims to build a deep learning-based system that can automatically determine whether a jump is under-rotated using motion data extracted from video. The system provides:
 
-1. A transparent, physics-consistent method of evaluating jump rotation
-2. Reduced bias introduced by human judgment
-3. Potential use as a tool to assist technical specialists in real-time scoring or post-event video review
+1. An automatic system to extract jump segments from full program videos
+2. A transparent, physics-consistent method of evaluating jump rotation
+3. Reduced bias introduced by human judgment
+4. Potential use as a tool to assist technical specialists in real-time scoring or post-event video review
 
 ## 🌼 Project Structure
 
