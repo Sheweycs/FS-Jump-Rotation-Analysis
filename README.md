@@ -124,14 +124,39 @@ Optional dependencies (for running notebooks):
 - **TorchMetrics**: 0.11.0 or higher (for additional metrics)
 
 ## 📝 Dataset
+Jump segments: 
+- Kaggle: 
+https://www.kaggle.com/datasets/sarazany/figure-skating-underrotations-and-flutzlip/data
+https://www.kaggle.com/datasets/betessawildenboer/lutz-jumps-dataset
 
-The project uses the "Figure Skating Under-rotations and Flutz/Lip" dataset from [Kaggle](https://www.kaggle.com/datasets/sarazany/figure-skating-underrotations-and-flutzlip/data).
+- YouTube Video:
+2025 IDF WOMEN FS https://youtu.be/XlCM3GohF78
+2025 IDF MEN FS https://youtu.be/ow7BhOBIk7A
+2025 COC WOMEN FS https://youtu.be/sxbEiRGy8Z8
+2025 COC MEN FS https://youtu.be/S1iE1Kh--HI
+2025 NHK MEN FS https://youtu.be/deD0tqeaPoI
+2025 SA WOMEN FS https://youtu.be/gzJ-SiSen2I
+
+- Model Train/Val dataset(obtained from the source above): https://drive.google.com/drive/folders/1T9triWuKSeDZ6JV0Kix9V7i4D7Pbf48o?usp=sharing 
+- Model Test dataset(obtained from the source above): https://drive.google.com/drive/folders/1A2ipbHI5B32y4kMntIoDcqUmlPTNvtaS?usp=drive_link
+- 
+- New Data input: 
+skeleton: https://drive.google.com/drive/folders/1qq4kzeOZYE1d1SnX3Hql29241KNIx7hP?usp=drive_link
+videos: https://drive.google.com/drive/folders/1HEFx0DYL51ZCf7THAh7SLDj6dIL4bP8d?usp=drive_link
+
+Rotation Analysis:
+- [Kaggle](https://www.kaggle.com/datasets/sarazany/figure-skating-underrotations-and-flutzlip/data).
 
 The dataset consists of short video clips from international figure skating competitions, categorized by:
 - **Full rotation**: Complete jump rotations
 - **Under-rotation**: Insufficient rotations (our focus)
 - **Questionable (q)**: Borderline cases
 - **Downgraded (down)**: Severely under-rotated
+
+- [YouTube] 2025 WTT MEN FS (https://youtu.be/co7xNl9Wkuc): self-labeled
+- Model Train/Val/Test dataset(obtained from the source above): https://drive.google.com/drive/folders/109k990G0kwnK4AUNeTZTw-EfT24T_YAT?usp=drive_link
+
+- New data input: https://drive.google.com/drive/folders/1s0QmaVyVOxJzSGmktqbulaRni7M7RVe5?usp=drive_link
 
 ## 🔬 Methodology
 
@@ -150,7 +175,9 @@ This project is part of an academic course project (MIE1517).
 - MediaPipe team for pose estimation framework
 - Optuna for hyperparameter optimization
 - Kaggle dataset contributors
+- commit helper: Claude
 
 ---
 
 For detailed implementation and experimental results, please refer to `MAIN_FS_Rotation_Analysis.ipynb`.
+
